@@ -1,5 +1,5 @@
 <?php
-// world.php - Exercise 2: Connect to DB and list all countries with head of state
+header('Content-Type: text/html;charset=UTF-8');
 
 $host = 'localhost';
 $dbname = 'world';
@@ -10,33 +10,52 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Query all countries
-    $stmt = $conn->query("SELECT name, head_of_state FROM countries ORDER BY name");
+    // Get the country from URL parameter, default to empty
+    $country = trim($_GET['country'] ?? '');
 
-    echo "<!DOCTYPE html>\n";
-    echo "<html lang='en'>\n";
-    echo "<head>\n";
-    echo "  <meta charset='UTF-8'>\n";
-    echo "  <title>World Countries</title>\n";
-    echo "  <link rel='stylesheet' href='world.css'>\n";
-    echo "</head>\n";
-    echo "<body>\n";
-    echo "  <h1>Countries and Heads of State</h1>\n";
-    echo "  <ul>\n";
-
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $name = htmlspecialchars($row['name']);
-        $leader = htmlspecialchars($row['head_of_state'] ?? '—');
-        echo "    <li><strong>$name</strong> – $leader</li>\n";
+    // Build the query
+    if ($country !== '') {
+        $stmt = $conn->prepare("SELECT name, head_of_state FROM countries WHERE name LIKE ? ORDER BY name");
+        $stmt->execute(["%$country%"]);
+    } else {
+        $stmt = $conn->query("SELECT name, head_of_state FROM countries ORDER BY name");
     }
 
-    echo "  </ul>\n";
-    echo "</body>\n";
-    echo "</html>\n";
+    echo "<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>World Country Lookup</title>
+    <link rel='stylesheet' href='world.css'>
+</head>
+<body>
+    <h1>Country Lookup Results</h1>";
+
+    if ($country !== '') {
+        echo "<p>Searching for: <strong>" . htmlspecialchars($country) . "</strong></p>";
+    } else {
+        echo "<p>Showing all countries</p>";
+    }
+
+    echo "<ul>";
+
+    $found = false;
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $found = true;
+        $name = htmlspecialchars($row['name']);
+        $leader = $row['head_of_state'] ? htmlspecialchars($row['head_of_state']) : '—';
+        echo "<li><strong>$name</strong> – $leader</li>";
+    }
+
+    if (!$found && $country !== '') {
+        echo "<li>No countries found matching '$country'</li>";
+    }
+
+    echo "</ul>
+</body>
+</html>";
 
 } catch (PDOException $e) {
-    http_response_code(500);
-    echo "<h1>Database Error</h1>";
-    echo "<p>" . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<h1>Database Error</h1><p>" . htmlspecialchars($e->getMessage()) . "</p>";
 }
-?> 
+?>
