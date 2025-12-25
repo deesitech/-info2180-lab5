@@ -10,15 +10,18 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Get the country from URL parameter, default to empty
     $country = trim($_GET['country'] ?? '');
 
-    // Build the query
     if ($country !== '') {
-        $stmt = $conn->prepare("SELECT name, head_of_state FROM countries WHERE name LIKE ? ORDER BY name");
+        $stmt = $conn->prepare("SELECT name, continent, independence_year, head_of_state 
+                                FROM countries 
+                                WHERE name LIKE ? 
+                                ORDER BY name");
         $stmt->execute(["%$country%"]);
     } else {
-        $stmt = $conn->query("SELECT name, head_of_state FROM countries ORDER BY name");
+        $stmt = $conn->query("SELECT name, continent, independence_year, head_of_state 
+                              FROM countries 
+                              ORDER BY name");
     }
 
     echo "<!DOCTYPE html>
@@ -27,6 +30,13 @@ try {
     <meta charset='UTF-8'>
     <title>World Country Lookup</title>
     <link rel='stylesheet' href='world.css'>
+    <style>
+        table { width: 80%; border-collapse: collapse; margin: 20px auto; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        h1, p { text-align: center; }
+    </style>
 </head>
 <body>
     <h1>Country Lookup Results</h1>";
@@ -37,21 +47,39 @@ try {
         echo "<p>Showing all countries</p>";
     }
 
-    echo "<ul>";
+    echo "<table>
+        <thead>
+            <tr>
+                <th>Country Name</th>
+                <th>Continent</th>
+                <th>Independence Year</th>
+                <th>Head of State</th>
+            </tr>
+        </thead>
+        <tbody>";
 
     $found = false;
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $found = true;
         $name = htmlspecialchars($row['name']);
+        $continent = htmlspecialchars($row['continent']);
+        $indep = $row['independence_year'] ? $row['independence_year'] : '—';
         $leader = $row['head_of_state'] ? htmlspecialchars($row['head_of_state']) : '—';
-        echo "<li><strong>$name</strong> – $leader</li>";
+
+        echo "<tr>
+                <td>$name</td>
+                <td>$continent</td>
+                <td>$indep</td>
+                <td>$leader</td>
+              </tr>";
     }
 
     if (!$found && $country !== '') {
-        echo "<li>No countries found matching '$country'</li>";
+        echo "<tr><td colspan='4'>No countries found matching '" . htmlspecialchars($country) . "'</td></tr>";
     }
 
-    echo "</ul>
+    echo "    </tbody>
+          </table>
 </body>
 </html>";
 
