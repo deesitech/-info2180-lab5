@@ -6,9 +6,6 @@
 
 		<!-- you can modify this as needed or to your preference -->
 		<link href="world.css" type="text/css" rel="stylesheet" />
-
-		<!-- you write this -->
-		<script src="world.js" type="text/javascript"></script>
 	</head>
 
 	<body>
@@ -21,12 +18,15 @@
 				<label for="country">Country:</label>
 				<input id="country" type="search" name="country" placeholder="Enter country name" />
 				<button id="lookup">Lookup</button>
+				<button id="lookup-cities">Lookup Cities</button>
 			</div>
 			
 			<div id="result">
-				<!-- countries will appear here -->
+				<!-- results will appear here -->
 			</div>
 		</main>
 
+		<!-- Script moved to bottom so buttons exist when JS runs -->
+		<script src="world.js" type="text/javascript"></script>
 	</body>
 </html>
